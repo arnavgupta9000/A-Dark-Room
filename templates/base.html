@@ -7,6 +7,25 @@
     {%block style%} {%endblock%} <!-- for the style sheet-->
 </head>
 <body>
+
+    <header id = 'header'>
+        {%if current_user.is_authenticated%} 
+            <p>Welcome, {{current_user.email}}</p>
+        {%else%} 
+            <p>Not logged in</p>
+        {%endif%}
+    </header>
+
+    {%with messages = get_flashed_messages()%}
+        {%if messages%}
+            <ul>
+                {%for i in messages%}
+                    <li>{{i}}</li>
+                {%endfor%}
+            </ul>
+        {%endif%}
+
+    {%endwith%}
     {%block body%}
     
     {%endblock%}

@@ -5,12 +5,15 @@
 {%block style%} <link rel="stylesheet" href="{{url_for('static', filename = 'css/main.css')}}"> {%endblock%}
 
 {%block body%}
+<div id = 'login_id'>
     <h1>A Hidden City</h1>
     <h3>Please Log in or Register to continue</h3>
     <div id = "login_buttons"> 
         <a href="{{url_for('auth.login')}}"><button>To Login Page</button></a>
         <a href="{{url_for('auth.register')}}"><button>To Register Page</button></a>
+        <a href="{{url_for('auth.logout')}}"><button>Logout</button></a>
     </div>
+</div>
 
 {%endblock%}
 

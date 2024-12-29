@@ -11,11 +11,14 @@
 
             <label for="password">Password</label>
             <input type="password" name="password" id="password" required>
+            <br>
 
             <button id = 'submit'>Submit</button>
             <!-- no need to wrap around 'a' tag since the form action handles the url -->
 
         </div>
     </form>
+    <br>
+    <a href="{{url_for('routes.home')}}"><button>Home Page</button></a>
 
 {%endblock%}
