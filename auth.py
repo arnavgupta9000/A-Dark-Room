@@ -61,4 +61,4 @@ def register():
 
 
     
-    return render_template('register.html',user=current_user)
+    return render_template('register.html')

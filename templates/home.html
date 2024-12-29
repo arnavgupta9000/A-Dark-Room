@@ -7,12 +7,20 @@
 {%block body%}
 <div id = 'login_id'>
     <h1>A Hidden City</h1>
-    <h3>Please Log in or Register to continue</h3>
-    <div id = "login_buttons"> 
-        <a href="{{url_for('auth.login')}}"><button>To Login Page</button></a>
-        <a href="{{url_for('auth.register')}}"><button>To Register Page</button></a>
+    {%if not current_user.is_authenticated%}
+        <h3>Please Log in or Register to continue</h3>
+        <div id = "login_buttons"> 
+            <a href="{{url_for('auth.login')}}"><button>To Login Page</button></a>
+            <a href="{{url_for('auth.register')}}"><button>To Register Page</button></a>
+    {%else%}
+        <button id = 'login_play'>Play</button>
         <a href="{{url_for('auth.logout')}}"><button>Logout</button></a>
+    {%endif%}
     </div>
+</div>
+
+<div id = 'play_mode'>
+    
 </div>
 
 {%endblock%}
