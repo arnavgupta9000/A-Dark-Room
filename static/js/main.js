@@ -3,16 +3,16 @@ document.getElementById("login_play").addEventListener("click", () => {
     document.getElementById("header").style.display = 'none';
     document.getElementById("play_mode").style.display = 'block';
 
-    fetch('/has_played')
+    fetch('/has_played') // fetch the data
     .then(response => response.json())
-    .then(data => {
+    .then(data => { // data can be any name
         let action = document.getElementById('play_mode');
         action.innerHTML = '';
 
         if (data.played) {
-            action.innerHTML = '<button id = "continue">Continue</button>';
+            action.innerHTML = '<button id = "start_continue_button">Continue</button>';
         } else {
-            action .innerHTML = '<button id="start">Start</button>';
+            action .innerHTML = '<button id="start_continue_button">Start</button>';
 
         }
     })

@@ -3,3 +3,10 @@ body {
     align-items: center;
     flex-direction: column;
 }
+
+#start_continue_button {
+    margin-top: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
