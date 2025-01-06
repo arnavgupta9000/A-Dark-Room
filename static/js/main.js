@@ -8,16 +8,35 @@ document.getElementById("login_play").addEventListener("click", () => {
     .then(data => { // data can be any name
         let action = document.getElementById('play_mode');
         action.innerHTML = '';
-
         if (data.played) {
-            action.innerHTML = '<button id = "start_continue_button">Continue</button>';
+            action.innerHTML += '<button id = "continue_button">Continue</button>';
         } else {
-            action .innerHTML = '<button id="start_continue_button">Start</button>';
+            action .innerHTML += '<button id="start_button">Start</button>';
 
         }
+
+        let homeButton = document.createElement("button");
+        homeButton.textContent = "Home";
+
+        homeButton.addEventListener("click", () => {
+            window.location.href = home
+        });
+
+        action.appendChild(homeButton)
+
+
     })
     .catch(error => {
         console.error('Error:', error);
         document.getElementById('play_mode').innerHTML = '<p> An error has occured </p>'
     });
+});
+
+document.getElementById("continue_button").addEventListener("click", () => {
+
+});
+
+
+document.getElementById("start_button").addEventListener("click", () => {
+    
 });

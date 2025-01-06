@@ -19,10 +19,19 @@
     </div>
 </div>
 
-<div id = 'play_mode'>
-    
+<div id = 'play_mode' style = "display: none";>
+    <div id = 'building'>
+        
+    </div>
 </div>
 
 {%endblock%}
 
-{%block js%} <script src = "{{ url_for('static', filename='js/main.js') }}"></script> {%endblock%}
+{%block js%}
+    <script>
+        let home = "{{ url_for('routes.home') }}";
+    </script>
+    <script src = "{{ url_for('static', filename='js/main.js') }}">
+
+    </script> 
+ {%endblock%}
