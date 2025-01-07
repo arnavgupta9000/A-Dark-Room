@@ -85,11 +85,15 @@
             play.append(Name);
             let trigger = () => {
                 play.classList.add('animate');
-
             }
-
             setTimeout(trigger, 100);
-            play.classList.remove('animate');
+            // play.classList.remove('animate');
+
+            setTimeout(() => {
+                play.innerText = "";
+            }, 2500);
         }
     }
+
+    
 })();
