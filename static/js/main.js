@@ -181,7 +181,12 @@ function generateMap() {
 
      const spriteWidth = 64; // Width of each frame in the sprite sheet
      const spriteHeight = 64; // Height of each frame in the sprite sheet
-     
+
+     let currentDirection = 'down'; // Default is down
+     let currentFrame = 0; // Current frame of animation
+     const totalFrames = 4; // Number of frames per direction
+
+
 
 
      // Function to draw the tile map
@@ -207,10 +212,26 @@ function generateMap() {
      function drawPlayer() {
          const x = playerPosition.x * tileSize;
          const y = playerPosition.y * tileSize;
-         const spriteX = 0; // This value depends on which frame you want (0 for the first frame, 64 for the second, etc.)
+        // Set the sprite row based on the current direction
+        let spriteRow = 0;
+        if (currentDirection === 'down') {
+            spriteRow = 0; // Row for down
+        } else if (currentDirection === 'left') {
+            spriteRow = 1; // Row for left
+        } else if (currentDirection === 'right') {
+            spriteRow = 2; // Row for right
+        } else if (currentDirection === 'up') {
+            spriteRow = 3; // Row for up
+        }
 
-         // Draw a specific frame from the sprite sheet (frame 0 for now)
-         ctx.drawImage(playerImage, spriteX, 0, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
+
+        // Calculate the x position on the sprite sheet for the current frame
+        const spriteX = currentFrame * spriteWidth;
+
+        // Draw the current frame of the player sprite from the sprite sheet
+        ctx.drawImage(playerImage, spriteX, spriteRow * spriteHeight, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
+
+           
   }
 
      // Function to update the game (clear and redraw)
@@ -225,23 +246,30 @@ function generateMap() {
 
      // Listen for keypresses to move the player
      document.addEventListener('keydown', (event) => {
-         const movementSpeed = 1; // Move by 1 tile
+        const movementSpeed = 1; // Move by 1 tile
 
-         // Check the direction of movement based on arrow keys
-         if (event.key === 'w' && playerPosition.y > 0 && tileMap[playerPosition.y - 1][playerPosition.x] === 0) {
-             playerPosition.y -= movementSpeed;
-         } else if (event.key === 's' && playerPosition.y < mapHeight - 1 && tileMap[playerPosition.y + 1][playerPosition.x] === 0) {
-             playerPosition.y += movementSpeed;
-         } else if (event.key === 'a' && playerPosition.x > 0 && tileMap[playerPosition.y][playerPosition.x - 1] === 0) {
-             playerPosition.x -= movementSpeed;
-         } else if (event.key === 'd' && playerPosition.x < mapWidth - 1 && tileMap[playerPosition.y][playerPosition.x + 1] === 0) {
-             playerPosition.x += movementSpeed;
-         }
+        // Update the direction based on the arrow keys
+        if (event.key === 'w' && playerPosition.y > 0 && tileMap[playerPosition.y - 1][playerPosition.x] === 0) {
+            playerPosition.y -= movementSpeed;
+            currentDirection = 'up'; // Set direction to up
+        } else if (event.key === 's' && playerPosition.y < mapHeight - 1 && tileMap[playerPosition.y + 1][playerPosition.x] === 0) {
+            playerPosition.y += movementSpeed;
+            currentDirection = 'down'; // Set direction to down
+        } else if (event.key === 'a' && playerPosition.x > 0 && tileMap[playerPosition.y][playerPosition.x - 1] === 0) {
+            playerPosition.x -= movementSpeed;
+            currentDirection = 'left'; // Set direction to left
+        } else if (event.key === 'd' && playerPosition.x < mapWidth - 1 && tileMap[playerPosition.y][playerPosition.x + 1] === 0) {
+            playerPosition.x += movementSpeed;
+            currentDirection = 'right'; // Set direction to right
+        }
 
-         // Update the canvas
-         updateGame();
-     });
+        // Update the animation frame
+        currentFrame = (currentFrame + 1) % totalFrames;
 
+        // Update the canvas
+        updateGame();
+    });
+    
      // Wait until all images are loaded, then start the game
      let imagesLoaded = 0;
      const totalImages = 3; // We are loading 3 images (grass, wall, and player)
