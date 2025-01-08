@@ -138,66 +138,59 @@ function clear() {
 
 // Initial draw
 function generateMap() {
-    let canvas = document.createElement("canvas");
-    canvas.id = "gameCanvas";
-    canvas.width = "400";
-    canvas.height = "400";
-    play.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
+    clear();
+    mapContainer = document.createElement("div");
+    mapContainer.classList.add("map");
+    play.appendChild(mapContainer);
 
-    const tileSize = 40; // Size of each tile in pixels
     const map = [
-        [0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
-        [0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
-        [1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
-        [0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-        [0, 1, 0, 0, 1, 0, 0, 0, 1, 0]
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1]
     ];
+    
+    let playerPosition = { x: 0, y: 0 };
 
     function drawMap() {
+        mapContainer.innerHTML = ""; // Clear the container
+    
         for (let row = 0; row < map.length; row++) {
             for (let col = 0; col < map[row].length; col++) {
-                if (map[row][col] === 0) {
-                    ctx.fillStyle = "lightgreen"; // Grass
+                const tile = document.createElement("div");
+                tile.classList.add("tile");
+    
+                if (row === playerPosition.y && col === playerPosition.x) {
+                    tile.classList.add("player");
+                } else if (map[row][col] === 0) {
+                    tile.classList.add("grass");
                 } else {
-                    ctx.fillStyle = "gray"; // Wall
+                    tile.classList.add("wall");
                 }
-                ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+    
+                mapContainer.appendChild(tile);
             }
         }
     }
-    let player = { x: 0, y: 0 }; // Player's initial position
+    
+    drawMap();
 
-    function drawPlayer() {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(player.x * tileSize, player.y * tileSize, tileSize, tileSize);
-    }
-
-    // Handle keyboard input
     document.addEventListener("keydown", (event) => {
-        const { x, y } = player;
-
+        const { x, y } = playerPosition;
+    
         if (event.key === "ArrowUp" && y > 0 && map[y - 1][x] === 0) {
-            player.y -= 1;
+            playerPosition.y -= 1;
         } else if (event.key === "ArrowDown" && y < map.length - 1 && map[y + 1][x] === 0) {
-            player.y += 1;
+            playerPosition.y += 1;
         } else if (event.key === "ArrowLeft" && x > 0 && map[y][x - 1] === 0) {
-            player.x -= 1;
+            playerPosition.x -= 1;
         } else if (event.key === "ArrowRight" && x < map[0].length - 1 && map[y][x + 1] === 0) {
-            player.x += 1;
+            playerPosition.x += 1;
         }
-
-        drawGame(); // Redraw game with updated position
+    
+        drawMap(); // Redraw the map
     });
-    function drawGame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-        drawMap();
-        drawPlayer();
-    }
-        drawGame();
+    
+    
+    
 }

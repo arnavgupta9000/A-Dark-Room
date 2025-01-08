@@ -71,6 +71,25 @@ body {
 
 }
 
-canvas {
+.map {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    grid-template-rows: repeat(4, 1fr); 
+    gap: 0;
+    width: 100%;
+    height: 100%;
     border: 1px solid black;
+}
+.tile {
+    width: 40px;
+    height: 40px;
+}
+.grass {
+    background-color: lightgreen;
+}
+.wall {
+    background-color: gray;
+}
+.player {
+    background-color: blue;
 }
