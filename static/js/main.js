@@ -138,59 +138,122 @@ function clear() {
 
 // Initial draw
 function generateMap() {
-    clear();
-    mapContainer = document.createElement("div");
-    mapContainer.classList.add("map");
-    play.appendChild(mapContainer);
+     // Set up the canvas
+     let canvas = document.createElement("canvas");
+     canvas.id = canvas;
+     play.appendChild(canvas);
+     const ctx = canvas.getContext('2d');
+     const tileSize = 64; // Each tile's size (64x64 pixels)
 
-    const map = [
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1]
-    ];
-    
-    let playerPosition = { x: 0, y: 0 };
+     // Set canvas size to fit map dimensions
+     const mapWidth = 10; // Number of columns
+     const mapHeight = 10; // Number of rows
+     canvas.width = mapWidth * tileSize;
+     canvas.height = mapHeight * tileSize;
 
-    function drawMap() {
-        mapContainer.innerHTML = ""; // Clear the container
-    
-        for (let row = 0; row < map.length; row++) {
-            for (let col = 0; col < map[row].length; col++) {
-                const tile = document.createElement("div");
-                tile.classList.add("tile");
-    
-                if (row === playerPosition.y && col === playerPosition.x) {
-                    tile.classList.add("player");
-                } else if (map[row][col] === 0) {
-                    tile.classList.add("grass");
-                } else {
-                    tile.classList.add("wall");
-                }
-    
-                mapContainer.appendChild(tile);
-            }
-        }
-    }
-    
-    drawMap();
+     // Define the tile map (0 = grass, 1 = wall)
+     const tileMap = [
+         [0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+         [0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+         [0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
+         [1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+         [0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+         [0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+         [1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+         [0, 1, 0, 0, 1, 0, 0, 0, 1, 0]
+     ];
 
-    document.addEventListener("keydown", (event) => {
-        const { x, y } = playerPosition;
-    
-        if (event.key === "ArrowUp" && y > 0 && map[y - 1][x] === 0) {
-            playerPosition.y -= 1;
-        } else if (event.key === "ArrowDown" && y < map.length - 1 && map[y + 1][x] === 0) {
-            playerPosition.y += 1;
-        } else if (event.key === "ArrowLeft" && x > 0 && map[y][x - 1] === 0) {
-            playerPosition.x -= 1;
-        } else if (event.key === "ArrowRight" && x < map[0].length - 1 && map[y][x + 1] === 0) {
-            playerPosition.x += 1;
-        }
-    
-        drawMap(); // Redraw the map
-    });
-    
-    
-    
+     // Load the tile images (grass and wall)
+     const grassImage = new Image();
+     grassImage.src = '/static/img/grass.avif';  // Replace with your grass image path
+
+     const wallImage = new Image();
+     wallImage.src = '/static/img/wall.avif';   // Replace with your wall image path
+
+     // Load player image
+     const playerImage = new Image();
+     playerImage.src = '/static/img/spritesheet.png'; // Replace with your player image path
+
+     // Player's position (in tile coordinates)
+     let playerPosition = { x: 0, y: 0 };
+
+     const spriteWidth = 64; // Width of each frame in the sprite sheet
+     const spriteHeight = 64; // Height of each frame in the sprite sheet
+     
+
+
+     // Function to draw the tile map
+     function drawMap() {
+         // Loop through the tile map and draw each tile
+         for (let row = 0; row < mapHeight; row++) {
+             for (let col = 0; col < mapWidth; col++) {
+                 const tileType = tileMap[row][col];
+                 const x = col * tileSize;
+                 const y = row * tileSize;
+
+                 // Draw the correct tile based on the tile type (grass or wall)
+                 if (tileType === 0) {
+                     ctx.drawImage(grassImage, x, y, tileSize, tileSize);
+                 } else {
+                     ctx.drawImage(wallImage, x, y, tileSize, tileSize);
+                 }
+             }
+         }
+     }
+
+     // Function to draw the player
+     function drawPlayer() {
+         const x = playerPosition.x * tileSize;
+         const y = playerPosition.y * tileSize;
+         const spriteX = 0; // This value depends on which frame you want (0 for the first frame, 64 for the second, etc.)
+
+         // Draw a specific frame from the sprite sheet (frame 0 for now)
+         ctx.drawImage(playerImage, spriteX, 0, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
+  }
+
+     // Function to update the game (clear and redraw)
+     function updateGame() {
+         // Clear the canvas
+         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+         // Draw the map and the player
+         drawMap();
+         drawPlayer();
+     }
+
+     // Listen for keypresses to move the player
+     document.addEventListener('keydown', (event) => {
+         const movementSpeed = 1; // Move by 1 tile
+
+         // Check the direction of movement based on arrow keys
+         if (event.key === 'w' && playerPosition.y > 0 && tileMap[playerPosition.y - 1][playerPosition.x] === 0) {
+             playerPosition.y -= movementSpeed;
+         } else if (event.key === 's' && playerPosition.y < mapHeight - 1 && tileMap[playerPosition.y + 1][playerPosition.x] === 0) {
+             playerPosition.y += movementSpeed;
+         } else if (event.key === 'a' && playerPosition.x > 0 && tileMap[playerPosition.y][playerPosition.x - 1] === 0) {
+             playerPosition.x -= movementSpeed;
+         } else if (event.key === 'd' && playerPosition.x < mapWidth - 1 && tileMap[playerPosition.y][playerPosition.x + 1] === 0) {
+             playerPosition.x += movementSpeed;
+         }
+
+         // Update the canvas
+         updateGame();
+     });
+
+     // Wait until all images are loaded, then start the game
+     let imagesLoaded = 0;
+     const totalImages = 3; // We are loading 3 images (grass, wall, and player)
+
+     function checkImagesLoaded() {
+         imagesLoaded++;
+         if (imagesLoaded === totalImages) {
+             updateGame(); // Start the game once all images are loaded
+         }
+     }
+
+     grassImage.onload = checkImagesLoaded;
+     wallImage.onload = checkImagesLoaded;
+     playerImage.onload = checkImagesLoaded;
 }
