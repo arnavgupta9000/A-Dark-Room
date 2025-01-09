@@ -140,167 +140,185 @@ function clear() {
 }
 
 
-
 function generateMap() {
-     let canvas = document.createElement("canvas"); // create the canvas
-     canvas.id = canvas;
-     play.appendChild(canvas);
-     let ctx = canvas.getContext('2d');
-     const tileSize = 64;  // each tile is a 64 by 64 sprite
+    let canvas = document.createElement("canvas"); // create the canvas
+    canvas.id = canvas;
+    play.appendChild(canvas);
+    let ctx = canvas.getContext('2d');
 
-     const mapWidth = 10; // cols
-     const mapHeight = 10; // rows
+    const tileSize = 64; // size of each tile in pixels
+    const viewportWidth = 10; // horizontal
+    const viewportHeight = 8; // vertical
+    const mapWidth = Math.floor(window.innerWidth / tileSize) ; // cols
+    const mapHeight = Math.floor(window.innerHeight / tileSize) - 1; // rows
 
-     canvas.width = mapWidth * tileSize;
-     canvas.height = mapHeight * tileSize;
+    canvas.width = viewportWidth * tileSize;
+    canvas.height = viewportHeight * tileSize;
+    // camera
+   
 
-     // tile map, 0=grass, 1=wall
-     const tileMap = [
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
-     ];
 
-     const grassImage = new Image();
-     grassImage.src = '/static/img/grass.avif';
+    const tileMap = Array.from({ length: mapHeight }, () => 
+        Array.from({ length: mapWidth }, () => 0)
+    );
+    tileMap[mapHeight - 1][mapWidth - 1] = 1; 
 
-     const wallImage = new Image();
-     wallImage.src = '/static/img/wall.avif';   
 
-     // Load player image
-     const playerImage = new Image();
-     playerImage.src = '/static/img/spritesheet.png';
 
-     // player pos
-     let playerPos = { x: 0, y: 0 };
+    const grassImage = new Image();
+    grassImage.src = '/static/img/space.jpg';
 
-     const spriteWidth = 64; // width
-     const spriteHeight = 64; // height
+    const wallImage = new Image();
+    wallImage.src = '/static/img/wall.avif';   
 
-     let currentDirection = 'down'; // let the default be down
-     let currentFrame = 0; // current frame of animation
-     const totalFrames = 4; // # of frames per animation. in this case its 4 per row
+    // Load player image
+    const playerImage = new Image();
+    playerImage.src = '/static/img/spritesheet.png';
+
+    // player pos
+    let playerPos = { x: 0, y: 0 };
+
+   
+
+    let currentDirection = 'down'; // let the default be down
+    let currentFrame = 0; // current frame of animation
+    const totalFrames = 4; // # of frames per animation. in this case its 4 per row
+    const camera = { x: 0, y: 0 }; // Camera position in tiles
 
 
 
 
-     function drawMap() {
-         for (let row = 0; row < mapHeight; row++) {
-             for (let col = 0; col < mapWidth; col++) {
-                 const tileType = tileMap[row][col];
-                 const x = col * tileSize;
-                 const y = row * tileSize;
+    function drawMap() {
+        const startCol = Math.max(0, Math.floor(camera.x));
+        const endCol = Math.min(mapWidth, Math.ceil(camera.x + viewportWidth));
+        const startRow = Math.max(0, Math.floor(camera.y));
+        const endRow = Math.min(mapHeight, Math.ceil(camera.y + viewportHeight));
 
-                 if (tileType === 0) {
-                     ctx.drawImage(grassImage, x, y, tileSize, tileSize);
-                 } else {
-                     ctx.drawImage(wallImage, x, y, tileSize, tileSize);
-                 }
-             }
-         }
-     }
+        const offsetX = Math.floor((camera.x - startCol) * tileSize);
+        const offsetY = Math.floor((camera.y - startRow) * tileSize);
 
-     function drawPlayer() {
-            const x = playerPos.x * tileSize;
-            const y = playerPos.y * tileSize;
-            // shadow
-            const shadowWidth = 40; 
-            const shadowHeight = 10; 
-            const shadowOffsetY = 50; 
+        for (let row = startRow; row < endRow; row++) {
+            for (let col = startCol; col < endCol; col++) {
+                const tileType = tileMap[row][col];
+                const x = (col - startCol) * tileSize - offsetX;
+                const y = (row - startRow) * tileSize - offsetY;
 
-            ctx.beginPath();
-            ctx.ellipse(
-                x + tileSize / 2, // Center x of the shadow (align with the player's center)
-                y + shadowOffsetY + 7, // Center y of the shadow (slightly below the player)
-                shadowWidth / 2,   // Horizontal radius
-                shadowHeight / 2,  // Vertical radius
-                0,                 // Rotation (none)
-                0,                 // Start angle
-                2 * Math.PI        // End angle (full circle)
-            );
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black
-            ctx.fill();
-            // set the sprite row based on the current direction
-            let spriteRow = 0;
-            if (currentDirection === 'down') {
-                spriteRow = 0; 
-            } else if (currentDirection === 'left') {
-                spriteRow = 1; 
-            } else if (currentDirection === 'right') {
-                spriteRow = 2; 
-            } else if (currentDirection === 'up') {
-                spriteRow = 3; 
+                if (tileType === 0) {
+                    ctx.drawImage(grassImage, x, y, tileSize, tileSize);
+                } else {
+                    ctx.drawImage(wallImage, x, y, tileSize, tileSize);
+                }
+            }
+        }
+    }
+
+
+    function drawPlayer() {
+        const x = (playerPos.x - camera.x) * tileSize;
+        const y = (playerPos.y - camera.y) * tileSize;
+        const spriteWidth = 64; // width
+        const spriteHeight = 64; // height
+        // shadow
+        const shadowWidth = 40; 
+        const shadowHeight = 10; 
+        const shadowOffsetY = 50; 
+
+        ctx.beginPath();
+        ctx.ellipse(x + tileSize / 2, y + shadowOffsetY + 7, shadowWidth / 2,   shadowHeight / 2,  0,0,2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // semi (0.5) gray for now
+        ctx.fill();
+        
+        // set the sprite row based on the current direction
+        let spriteRow = 0;
+        if (currentDirection === 'down') {
+            spriteRow = 0; 
+        } else if (currentDirection === 'left') {
+            spriteRow = 1; 
+        } else if (currentDirection === 'right') {
+            spriteRow = 2; 
+        } else if (currentDirection === 'up') {
+            spriteRow = 3; 
+        }
+
+
+        // calc the x position on the sprite sheet for the current frame
+        const spriteX = currentFrame * spriteWidth;
+
+        // draw player
+        ctx.drawImage(playerImage, spriteX, spriteRow * spriteHeight, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
+
+        
+    }
+
+    function updateCamera() {
+        camera.x = Math.max(0, Math.min(playerPos.x - viewportWidth / 2, mapWidth - viewportWidth));
+        camera.y = Math.max(0, Math.min(playerPos.y - viewportHeight / 2, mapHeight - viewportHeight));
+    }
+
+
+    function updateGame() {
+        // clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // draw the map and the player and update the camera
+        updateCamera();
+        drawMap();
+        drawPlayer();
+    }
+
+    let keysPressed = {}; 
+    const movementSpeed = 1;
+    const movementCooldown = 50;
+    let lastMovementTime = 0; 
+    let isMoving = false;
+
+    function handleMovement() {
+        const currentTime = Date.now(); 
+        isMoving = false; 
+
+        if (currentTime - lastMovementTime >= movementCooldown) {
+            if (keysPressed['w'] && playerPos.y > 0 && tileMap[playerPos.y - 1][playerPos.x] === 0) {
+                playerPos.y -= movementSpeed;
+                currentDirection = 'up';
+                isMoving = true;
+            }
+            if (keysPressed['s'] && playerPos.y < mapHeight - 1 && tileMap[playerPos.y + 1][playerPos.x] === 0) {
+                playerPos.y += movementSpeed;
+                currentDirection = 'down';
+                isMoving = true;
+            }
+            if (keysPressed['a'] && playerPos.x > 0 && tileMap[playerPos.y][playerPos.x - 1] === 0) {
+                playerPos.x -= movementSpeed;
+                currentDirection = 'left';
+                isMoving = true;
+            }
+            if (keysPressed['d'] && playerPos.x < mapWidth - 1 && tileMap[playerPos.y][playerPos.x + 1] === 0) {
+                playerPos.x += movementSpeed;
+                currentDirection = 'right';
+                isMoving = true;
             }
 
-
-            // calc the x position on the sprite sheet for the current frame
-            const spriteX = currentFrame * spriteWidth;
-
-            // draw player
-            ctx.drawImage(playerImage, spriteX, spriteRow * spriteHeight, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
-
-            
-  }
-
-     function updateGame() {
-         // clear the canvas
-         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-         // draw the map and the player
-         drawMap();
-         drawPlayer();
-     }
-
-     const movementCooldown = 50; // in ms
-     let lastMovementTime = 0; // timestamp of the last movement
-
-     document.addEventListener('keydown', (event) => {
-        const movementSpeed = 1; 
-        const currentTime = Date.now(); // Get the current time
-        if (currentTime - lastMovementTime < movementCooldown) {
-            return; // to limit the speed moved when holding the key down
-        }
-    
-        lastMovementTime = currentTime;
-
-        if (event.key === 'w') {
-            currentDirection = 'up';
-        } else if (event.key === 's' ) {
-            currentDirection = 'down'; 
-        } else if (event.key === 'a' ) {
-            currentDirection = 'left';
-        } else if (event.key === 'd' ) {
-            currentDirection = 'right'; 
+            if (isMoving) { // only update the animation if the player moves
+                currentFrame = (currentFrame + 1) % totalFrames;
+                lastMovementTime = currentTime; 
+            }
         }
 
-
-        if (event.key === 'w' && playerPos.y > 0 && tileMap[playerPos.y - 1][playerPos.x] === 0) {
-            playerPos.y -= movementSpeed;
-            currentDirection = 'up'; 
-        } else if (event.key === 's' && playerPos.y < mapHeight - 1 && tileMap[playerPos.y + 1][playerPos.x] === 0) {
-            playerPos.y += movementSpeed;
-            currentDirection = 'down';
-        } else if (event.key === 'a' && playerPos.x > 0 && tileMap[playerPos.y][playerPos.x - 1] === 0) {
-            playerPos.x -= movementSpeed;
-            currentDirection = 'left';
-        } else if (event.key === 'd' && playerPos.x < mapWidth - 1 && tileMap[playerPos.y][playerPos.x + 1] === 0) {
-            playerPos.x += movementSpeed;
-            currentDirection = 'right';
-        }
-
-        // update the animation frame (from the spritesheet)
-        currentFrame = (currentFrame + 1) % totalFrames;
-
-        // update the canvas
         updateGame();
+    }
+
+    // listen for key presses
+    document.addEventListener('keydown', (event) => {
+        keysPressed[event.key] = true;
     });
+
+    // Listen for key releases
+    document.addEventListener('keyup', (event) => {
+        keysPressed[event.key] = false;
+    });
+
+    setInterval(handleMovement, 16); // ~60 FPS
+
     
      // load all images first then start the game
      let imagesLoaded = 0;
