@@ -120,7 +120,7 @@ function homeMode(mode = 1) {
     
     if (mode == 0) {
         clear();
-        generateMap();
+        let gameMap = new GameMap(play);
     }
 }
 
@@ -140,198 +140,180 @@ function clear() {
 }
 
 
-function generateMap() {
-    let canvas = document.createElement("canvas"); // create the canvas
-    canvas.id = canvas;
-    play.appendChild(canvas);
-    let ctx = canvas.getContext('2d');
+class GameMap {
+    constructor(playElement) {
+        this.tileSize = 64;
+        this.viewportWidth = 10;
+        this.viewportHeight = 8;
+        this.mapWidth = Math.floor(window.innerWidth / this.tileSize);
+        this.mapHeight = Math.floor(window.innerHeight / this.tileSize) - 1;
 
-    const tileSize = 64; // size of each tile in pixels
-    const viewportWidth = 10; // horizontal
-    const viewportHeight = 8; // vertical
-    const mapWidth = Math.floor(window.innerWidth / tileSize) ; // cols
-    const mapHeight = Math.floor(window.innerHeight / tileSize) - 1; // rows
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = this.viewportWidth * this.tileSize;
+        this.canvas.height = this.viewportHeight * this.tileSize;
+        playElement.appendChild(this.canvas);
 
-    canvas.width = viewportWidth * tileSize;
-    canvas.height = viewportHeight * tileSize;
-    // camera
-   
+        this.ctx = this.canvas.getContext('2d');
+
+        // Camera and player
+        this.camera = { x: 0, y: 0 };
+        this.playerPos = { x: 0, y: 0 };
+        this.currentDirection = 'down';
+        this.currentFrame = 0;
+        this.totalFrames = 4;
+
+        // Movement control
+        this.keysPressed = {};
+        this.movementSpeed = 1;
+        this.movementCooldown = 50;
+        this.lastMovementTime = 0;
+
+        // Map
+        this.tileMap = this.createTileMap();
+        this.isMoving = false;
+
+        // Load assets
+        this.grassImage = this.loadImage('/static/img/space.jpg');
+        this.wallImage = this.loadImage('/static/img/wall.avif');
+        this.playerImage = this.loadImage('/static/img/spritesheet.png');
+
+        this.imagesLoaded = 0;
+        this.totalImages = 3;
+
+        this.setupEventListeners();
+
+        setInterval(() => this.handleMovement(), 16);
+    }
+
+    createTileMap() {
+        const map = Array.from({ length: this.mapHeight }, () => 
+            Array.from({ length: this.mapWidth }, () => 0)
+        );
+        map[this.mapHeight - 1][this.mapWidth - 1] = 1;
+        return map;
+    }
 
 
-    const tileMap = Array.from({ length: mapHeight }, () => 
-        Array.from({ length: mapWidth }, () => 0)
-    );
-    tileMap[mapHeight - 1][mapWidth - 1] = 1; 
+    
 
+    loadImage(src) {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => this.onImageLoaded();
+        return img;
+    }
 
+    onImageLoaded() {
+        this.imagesLoaded++;
+        if (this.imagesLoaded === this.totalImages) {
+            this.updateGame();
+        }
+    }
 
-    const grassImage = new Image();
-    grassImage.src = '/static/img/space.jpg';
+    setupEventListeners() {
+        document.addEventListener('keydown', (event) => {
+            this.keysPressed[event.key] = true;
+        });
+        document.addEventListener('keyup', (event) => {
+            this.keysPressed[event.key] = false;
+        });
+    }
 
-    const wallImage = new Image();
-    wallImage.src = '/static/img/wall.avif';   
+    updateCamera() {
+        this.camera.x = Math.max(0, Math.min(this.playerPos.x - this.viewportWidth / 2, this.mapWidth - this.viewportWidth));
+        this.camera.y = Math.max(0, Math.min(this.playerPos.y - this.viewportHeight / 2, this.mapHeight - this.viewportHeight));
+    }
 
-    // Load player image
-    const playerImage = new Image();
-    playerImage.src = '/static/img/spritesheet.png';
+    drawMap() {
+        const startCol = Math.max(0, Math.floor(this.camera.x));
+        const endCol = Math.min(this.mapWidth, Math.ceil(this.camera.x + this.viewportWidth));
+        const startRow = Math.max(0, Math.floor(this.camera.y));
+        const endRow = Math.min(this.mapHeight, Math.ceil(this.camera.y + this.viewportHeight));
 
-    // player pos
-    let playerPos = { x: 0, y: 0 };
-
-   
-
-    let currentDirection = 'down'; // let the default be down
-    let currentFrame = 0; // current frame of animation
-    const totalFrames = 4; // # of frames per animation. in this case its 4 per row
-    const camera = { x: 0, y: 0 }; // Camera position in tiles
-
-
-
-
-    function drawMap() {
-        const startCol = Math.max(0, Math.floor(camera.x));
-        const endCol = Math.min(mapWidth, Math.ceil(camera.x + viewportWidth));
-        const startRow = Math.max(0, Math.floor(camera.y));
-        const endRow = Math.min(mapHeight, Math.ceil(camera.y + viewportHeight));
-
-        const offsetX = Math.floor((camera.x - startCol) * tileSize);
-        const offsetY = Math.floor((camera.y - startRow) * tileSize);
+        const offsetX = Math.floor((this.camera.x - startCol) * this.tileSize);
+        const offsetY = Math.floor((this.camera.y - startRow) * this.tileSize);
 
         for (let row = startRow; row < endRow; row++) {
             for (let col = startCol; col < endCol; col++) {
-                const tileType = tileMap[row][col];
-                const x = (col - startCol) * tileSize - offsetX;
-                const y = (row - startRow) * tileSize - offsetY;
+                const tileType = this.tileMap[row][col];
+                const x = (col - startCol) * this.tileSize - offsetX;
+                const y = (row - startRow) * this.tileSize - offsetY;
 
                 if (tileType === 0) {
-                    ctx.drawImage(grassImage, x, y, tileSize, tileSize);
+                    this.ctx.drawImage(this.grassImage, x, y, this.tileSize, this.tileSize);
                 } else {
-                    ctx.drawImage(wallImage, x, y, tileSize, tileSize);
+                    this.ctx.drawImage(this.wallImage, x, y, this.tileSize, this.tileSize);
                 }
             }
         }
     }
 
+    drawPlayer() {
+        const x = (this.playerPos.x - this.camera.x) * this.tileSize;
+        const y = (this.playerPos.y - this.camera.y) * this.tileSize;
+        const shadowWidth = 40;
+        const shadowHeight = 10;
+        const shadowOffsetY = 50;
 
-    function drawPlayer() {
-        const x = (playerPos.x - camera.x) * tileSize;
-        const y = (playerPos.y - camera.y) * tileSize;
-        const spriteWidth = 64; // width
-        const spriteHeight = 64; // height
-        // shadow
-        const shadowWidth = 40; 
-        const shadowHeight = 10; 
-        const shadowOffsetY = 50; 
+        // Shadow
+        this.ctx.beginPath();
+        this.ctx.ellipse(x + this.tileSize / 2, y + shadowOffsetY + 7, shadowWidth / 2, shadowHeight / 2, 0, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.fill();
 
-        ctx.beginPath();
-        ctx.ellipse(x + tileSize / 2, y + shadowOffsetY + 7, shadowWidth / 2,   shadowHeight / 2,  0,0,2 * Math.PI);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // semi (0.5) gray for now
-        ctx.fill();
-        
-        // set the sprite row based on the current direction
+        // Player sprite
+        const spriteWidth = 64;
+        const spriteHeight = 64;
         let spriteRow = 0;
-        if (currentDirection === 'down') {
-            spriteRow = 0; 
-        } else if (currentDirection === 'left') {
-            spriteRow = 1; 
-        } else if (currentDirection === 'right') {
-            spriteRow = 2; 
-        } else if (currentDirection === 'up') {
-            spriteRow = 3; 
-        }
 
+        if (this.currentDirection === 'down') spriteRow = 0;
+        if (this.currentDirection === 'left') spriteRow = 1;
+        if (this.currentDirection === 'right') spriteRow = 2;
+        if (this.currentDirection === 'up') spriteRow = 3;
 
-        // calc the x position on the sprite sheet for the current frame
-        const spriteX = currentFrame * spriteWidth;
-
-        // draw player
-        ctx.drawImage(playerImage, spriteX, spriteRow * spriteHeight, spriteWidth, spriteHeight, x, y, tileSize, tileSize);
-
-        
+        const spriteX = this.currentFrame * spriteWidth;
+        this.ctx.drawImage(this.playerImage, spriteX, spriteRow * spriteHeight, spriteWidth, spriteHeight, x, y, this.tileSize, this.tileSize);
     }
 
-    function updateCamera() {
-        camera.x = Math.max(0, Math.min(playerPos.x - viewportWidth / 2, mapWidth - viewportWidth));
-        camera.y = Math.max(0, Math.min(playerPos.y - viewportHeight / 2, mapHeight - viewportHeight));
+    updateGame() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.updateCamera();
+        this.drawMap();
+        this.drawPlayer();
     }
 
+    handleMovement() {
+        const currentTime = Date.now();
+        this.isMoving = false;
 
-    function updateGame() {
-        // clear the canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // draw the map and the player and update the camera
-        updateCamera();
-        drawMap();
-        drawPlayer();
-    }
-
-    let keysPressed = {}; 
-    const movementSpeed = 1;
-    const movementCooldown = 50;
-    let lastMovementTime = 0; 
-    let isMoving = false;
-
-    function handleMovement() {
-        const currentTime = Date.now(); 
-        isMoving = false; 
-
-        if (currentTime - lastMovementTime >= movementCooldown) {
-            if (keysPressed['w'] && playerPos.y > 0 && tileMap[playerPos.y - 1][playerPos.x] === 0) {
-                playerPos.y -= movementSpeed;
-                currentDirection = 'up';
-                isMoving = true;
+        if (currentTime - this.lastMovementTime >= this.movementCooldown) {
+            if (this.keysPressed['w'] && this.playerPos.y > 0 && this.tileMap[this.playerPos.y - 1][this.playerPos.x] === 0) {
+                this.playerPos.y -= this.movementSpeed;
+                this.currentDirection = 'up';
+                this.isMoving = true;
             }
-            if (keysPressed['s'] && playerPos.y < mapHeight - 1 && tileMap[playerPos.y + 1][playerPos.x] === 0) {
-                playerPos.y += movementSpeed;
-                currentDirection = 'down';
-                isMoving = true;
+            if (this.keysPressed['s'] && this.playerPos.y < this.mapHeight - 1 && this.tileMap[this.playerPos.y + 1][this.playerPos.x] === 0) {
+                this.playerPos.y += this.movementSpeed;
+                this.currentDirection = 'down';
+                this.isMoving = true;
             }
-            if (keysPressed['a'] && playerPos.x > 0 && tileMap[playerPos.y][playerPos.x - 1] === 0) {
-                playerPos.x -= movementSpeed;
-                currentDirection = 'left';
-                isMoving = true;
+            if (this.keysPressed['a'] && this.playerPos.x > 0 && this.tileMap[this.playerPos.y][this.playerPos.x - 1] === 0) {
+                this.playerPos.x -= this.movementSpeed;
+                this.currentDirection = 'left';
+                this.isMoving = true;
             }
-            if (keysPressed['d'] && playerPos.x < mapWidth - 1 && tileMap[playerPos.y][playerPos.x + 1] === 0) {
-                playerPos.x += movementSpeed;
-                currentDirection = 'right';
-                isMoving = true;
+            if (this.keysPressed['d'] && this.playerPos.x < this.mapWidth - 1 && this.tileMap[this.playerPos.y][this.playerPos.x + 1] === 0) {
+                this.playerPos.x += this.movementSpeed;
+                this.currentDirection = 'right';
+                this.isMoving = true;
             }
 
-            if (isMoving) { // only update the animation if the player moves
-                currentFrame = (currentFrame + 1) % totalFrames;
-                lastMovementTime = currentTime; 
+            if (this.isMoving) {
+                this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+                this.lastMovementTime = currentTime;
             }
         }
 
-        updateGame();
+        this.updateGame();
     }
-
-    // listen for key presses
-    document.addEventListener('keydown', (event) => {
-        keysPressed[event.key] = true;
-    });
-
-    // Listen for key releases
-    document.addEventListener('keyup', (event) => {
-        keysPressed[event.key] = false;
-    });
-
-    setInterval(handleMovement, 16); // ~60 FPS
-
-    
-     // load all images first then start the game
-     let imagesLoaded = 0;
-     const totalImages = 3; // 
-
-     function checkImagesLoaded() {
-         imagesLoaded++;
-         if (imagesLoaded === totalImages) {
-             updateGame(); // start
-         }
-     }
-
-     grassImage.onload = checkImagesLoaded;
-     wallImage.onload = checkImagesLoaded;
-     playerImage.onload = checkImagesLoaded;
 }
